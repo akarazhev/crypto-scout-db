@@ -1,0 +1,30 @@
+version: "3.9"
+
+services:
+  postgres:
+    image: timescale/timescaledb:latest-pg13
+    container_name: crypto-scout-db
+    ports:
+      - "5432:5432"
+    volumes:
+      - ./data/postgresql:/var/lib/postgresql/data
+      - ./script/init.sql:/docker-entrypoint-initdb.d/init.sql
+    networks:
+      - crypto-scout
+    env_file:
+      - ./secrets/timescaledb.env
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U sa -d crypto_scout" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          cpus: '0.50'
+          memory: 512M
+
+networks:
+  crypto-scout:
+    driver: bridge
