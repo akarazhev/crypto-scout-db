@@ -4,26 +4,94 @@ services:
   postgres:
     image: timescale/timescaledb:latest-pg13
     container_name: crypto-scout-db
+    shm_size: "1g"
+    ulimits:
+      nofile:
+        soft: 262144
+        hard: 262144
     ports:
       - "5432:5432"
     volumes:
       - ./data/postgresql:/var/lib/postgresql/data
-      - ./script/init.sql:/docker-entrypoint-initdb.d/init.sql
+      - ./script/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
     networks:
       - crypto-scout
     env_file:
       - ./secrets/timescaledb.env
+    environment:
+      POSTGRES_DB: crypto_scout
+      POSTGRES_USER: sa
+      TZ: UTC
     healthcheck:
-      test: [ "CMD-SHELL", "pg_isready -U sa -d crypto_scout" ]
+      test: [ "CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB" ]
       interval: 10s
       timeout: 5s
       retries: 5
+      start_period: 30s
+    command:
+      - postgres
+      - -c
+      - shared_preload_libraries=timescaledb
+      - -c
+      - max_connections=200
+      - -c
+      - shared_buffers=2GB
+      - -c
+      - effective_cache_size=6GB
+      - -c
+      - maintenance_work_mem=1GB
+      - -c
+      - work_mem=16MB
+      - -c
+      - autovacuum_work_mem=256MB
+      - -c
+      - wal_level=replica
+      - -c
+      - max_wal_size=8GB
+      - -c
+      - min_wal_size=2GB
+      - -c
+      - checkpoint_timeout=15min
+      - -c
+      - checkpoint_completion_target=0.9
+      - -c
+      - wal_compression=on
+      - -c
+      - timezone=UTC
+      - -c
+      - log_min_duration_statement=500ms
+      - -c
+      - log_checkpoints=on
+      - -c
+      - timescaledb.telemetry_level=off
     restart: unless-stopped
     deploy:
       resources:
         limits:
-          cpus: '0.50'
-          memory: 512M
+          cpus: '2.00'
+          memory: 8G
+
+  pgbackups:
+    image: prodrigestivill/postgres-backup-local:16
+    container_name: crypto-scout-db-backups
+    restart: unless-stopped
+    env_file:
+      - ./secrets/timescaledb.env
+    environment:
+      POSTGRES_HOST: postgres
+      POSTGRES_DB: crypto_scout
+      POSTGRES_USER: sa
+      SCHEDULE: "@daily"
+      BACKUP_KEEP_DAYS: "7"
+      BACKUP_KEEP_WEEKS: "4"
+      BACKUP_KEEP_MONTHS: "6"
+      POSTGRES_EXTRA_OPTS: "--schema=crypto_scout --blobs"
+    volumes:
+      - ./backups:/backups
+    depends_on:
+      - postgres
+    networks:
+      - crypto-scout
 
 networks:
   crypto-scout:
