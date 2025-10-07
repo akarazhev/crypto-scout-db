@@ -1,6 +1,7 @@
 # TimescaleDB Production Setup for crypto-scout-db
 
-This document describes the production-ready TimescaleDB configuration used by `crypto-scout-db` to store high-volume time-series data from Bybit and CoinMarketCap.
+This document describes the production-ready TimescaleDB configuration used by `crypto-scout-db` to store high-volume
+time-series data from Bybit and CoinMarketCap.
 
 ## Objectives
 
@@ -14,15 +15,15 @@ This document describes the production-ready TimescaleDB configuration used by `
 ## Summary of changes
 
 - **Compose**: `podman-compose.yml`
-  - Init SQL mounted read-only, added `shm_size`, `ulimits`, env, and improved healthcheck.
-  - Added PostgreSQL tuning via `command: [postgres, -c ...]`.
-  - Added daily backup sidecar service with retention.
-  - Increased resource limits to align with tuning.
+    - Init SQL mounted read-only, added `shm_size`, `ulimits`, env, and improved healthcheck.
+    - Added PostgreSQL tuning via `command: [postgres, -c ...]`.
+    - Added daily backup sidecar service with retention.
+    - Increased resource limits to align with tuning.
 - **SQL init**: `script/init.sql`
-  - Idempotent hypertables with 1-day chunking.
-  - Compression with `compress_orderby` on time columns.
-  - Reorder policies on timestamp indexes.
-  - Retention policies for Bybit/CMC data.
+    - Idempotent hypertables with 1-day chunking.
+    - Compression with `compress_orderby` on time columns.
+    - Reorder policies on timestamp indexes.
+    - Retention policies for Bybit/CMC data.
 
 ---
 
@@ -30,35 +31,36 @@ This document describes the production-ready TimescaleDB configuration used by `
 
 - **Image**: `timescale/timescaledb:latest-pg13`
 - **Service**: `postgres`
-  - **Persistence**
-    - Data: `./data/postgresql -> /var/lib/postgresql/data`
-    - Init: `./script/init.sql -> /docker-entrypoint-initdb.d/init.sql:ro`
-  - **Environment**
-    - `env_file: ./secrets/timescaledb.env`
-    - `POSTGRES_DB=crypto_scout`, `POSTGRES_USER=sa`, `TZ=UTC`
-  - **Healthcheck**
-    - `pg_isready -U $POSTGRES_USER -d $POSTGRES_DB` with `start_period: 30s`
-  - **Resources**
-    - `shm_size: 1g`
-    - `ulimits: nofile soft=262144 hard=262144`
-    - `deploy.resources.limits: cpus=2, memory=8G`
-  - **PostgreSQL tuning (command)**
-    - `shared_preload_libraries=timescaledb`
-    - `max_connections=200`
-    - `shared_buffers=2GB`, `effective_cache_size=6GB`
-    - `maintenance_work_mem=1GB`, `work_mem=16MB`, `autovacuum_work_mem=256MB`
-    - `wal_level=replica`, `wal_compression=on`
-    - `max_wal_size=8GB`, `min_wal_size=2GB`
-    - `checkpoint_timeout=15min`, `checkpoint_completion_target=0.9`
-    - `timezone=UTC`, `log_min_duration_statement=500ms`, `log_checkpoints=on`
-    - `timescaledb.telemetry_level=off`
+    - **Persistence**
+        - Data: `./data/postgresql -> /var/lib/postgresql/data`
+        - Init: `./script/init.sql -> /docker-entrypoint-initdb.d/init.sql:ro`
+    - **Environment**
+        - `env_file: ./secrets/timescaledb.env`
+        - `POSTGRES_DB=crypto_scout`, `POSTGRES_USER=sa`, `TZ=UTC`
+    - **Healthcheck**
+        - `pg_isready -U $POSTGRES_USER -d $POSTGRES_DB` with `start_period: 30s`
+    - **Resources**
+        - `shm_size: 1g`
+        - `ulimits: nofile soft=262144 hard=262144`
+        - `deploy.resources.limits: cpus=2, memory=8G`
+    - **PostgreSQL tuning (command)**
+        - `shared_preload_libraries=timescaledb`
+        - `max_connections=200`
+        - `shared_buffers=2GB`, `effective_cache_size=6GB`
+        - `maintenance_work_mem=1GB`, `work_mem=16MB`, `autovacuum_work_mem=256MB`
+        - `wal_level=replica`, `wal_compression=on`
+        - `max_wal_size=8GB`, `min_wal_size=2GB`
+        - `checkpoint_timeout=15min`, `checkpoint_completion_target=0.9`
+        - `timezone=UTC`, `log_min_duration_statement=500ms`, `log_checkpoints=on`
+        - `timescaledb.telemetry_level=off`
 
 - **Backup sidecar**: `pgbackups` (`prodrigestivill/postgres-backup-local:16`)
-  - Schedule: `@daily`
-  - Retention: `BACKUP_KEEP_DAYS=7`, `BACKUP_KEEP_WEEKS=4`, `BACKUP_KEEP_MONTHS=6`
-  - Output: `./backups -> /backups`
-  - Uses same `env_file` for credentials; overrides `POSTGRES_HOST=postgres`, `POSTGRES_DB=crypto_scout`, `POSTGRES_USER=sa`.
-  - Extra opts: `--schema=crypto_scout --blobs`
+    - Schedule: `@daily`
+    - Retention: `BACKUP_KEEP_DAYS=7`, `BACKUP_KEEP_WEEKS=4`, `BACKUP_KEEP_MONTHS=6`
+    - Output: `./backups -> /backups`
+    - Uses same `env_file` for credentials; overrides `POSTGRES_HOST=postgres`, `POSTGRES_DB=crypto_scout`,
+      `POSTGRES_USER=sa`.
+    - Extra opts: `--schema=crypto_scout --blobs`
 
 ### Required secrets
 
@@ -88,22 +90,23 @@ POSTGRES_DB=crypto_scout
 ### Indexes
 
 - Time indexes for ranges:
-  - `idx_cmc_fgi_timestamp`, `idx_bybit_spot_tickers_btc_usdt_timestamp`, `idx_bybit_spot_tickers_eth_usdt_timestamp`, `idx_bybit_lpl_stake_begin_time`
+    - `idx_cmc_fgi_timestamp`, `idx_bybit_spot_tickers_btc_usdt_timestamp`, `idx_bybit_spot_tickers_eth_usdt_timestamp`,
+      `idx_bybit_lpl_stake_begin_time`
 - Selectivity helpers: `idx_cmc_fgi_score`, `idx_cmc_fgi_name`, `idx_bybit_lpl_return_coin`.
 
 ### Compression
 
 - Enabled on all hypertables with time-order:
-  - `bybit_spot_tickers_btc_usdt`: `compress_orderby = 'timestamp DESC'`
-  - `bybit_spot_tickers_eth_usdt`: `compress_orderby = 'timestamp DESC'`
-  - `bybit_lpl`: `compress_segmentby = 'return_coin'`, `compress_orderby = 'stake_begin_time DESC'`
-  - `cmc_fgi`: `compress_segmentby = 'name'`, `compress_orderby = 'timestamp DESC'`
+    - `bybit_spot_tickers_btc_usdt`: `compress_orderby = 'timestamp DESC'`
+    - `bybit_spot_tickers_eth_usdt`: `compress_orderby = 'timestamp DESC'`
+    - `bybit_lpl`: `compress_segmentby = 'return_coin'`, `compress_orderby = 'stake_begin_time DESC'`
+    - `cmc_fgi`: `compress_segmentby = 'name'`, `compress_orderby = 'timestamp DESC'`
 - **Compression policy**: compress chunks older than 7 days for all hypertables.
 
 ### Reorder policies
 
 - Reorder open chunks by their time index for better locality:
-  - BTC/USDT, ETH/USDT, FGI by timestamp index; LPL by `stake_begin_time` index.
+    - BTC/USDT, ETH/USDT, FGI by timestamp index; LPL by `stake_begin_time` index.
 
 ### Retention policies
 
@@ -119,15 +122,15 @@ POSTGRES_DB=crypto_scout
 ## Operations
 
 - **Start**
-  - Ensure directories exist: `./data/postgresql`, `./backups`, and `./secrets/timescaledb.env` populated.
-  - Bring up with Podman Compose (example):
+    - Ensure directories exist: `./data/postgresql`, `./backups`, and `./secrets/timescaledb.env` populated.
+    - Bring up with Podman Compose (example):
 
 ```sh
 podman compose up -d
 ```
 
 - **Health**
-  - Check container health status via compose; service is healthy when `pg_isready` succeeds.
+    - Check container health status via compose; service is healthy when `pg_isready` succeeds.
 
 - **Connect**
 
@@ -136,11 +139,11 @@ psql "host=localhost port=5432 dbname=crypto_scout user=sa"
 ```
 
 - **Backups**
-  - Daily dumps saved under `./backups/` with rotation.
-  - Restore with matching client tools (`psql`/`pg_restore`) as appropriate for dump format.
+    - Daily dumps saved under `./backups/` with rotation.
+    - Restore with matching client tools (`psql`/`pg_restore`) as appropriate for dump format.
 
 - **Vacuum/Analyze**
-  - Defaults plus increased `autovacuum_work_mem` target large tables. Monitor bloat and adjust if needed.
+    - Defaults plus increased `autovacuum_work_mem` target large tables. Monitor bloat and adjust if needed.
 
 ---
 
