@@ -124,9 +124,9 @@ SELECT add_compression_policy('crypto_scout.bybit_lpl', INTERVAL '7 days');
 SELECT add_compression_policy('crypto_scout.bybit_spot_tickers_eth_usdt', INTERVAL '7 days');
  
 -- Grant privileges
-GRANT ALL PRIVILEGES ON SCHEMA crypto_scout TO sa;
-GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA crypto_scout TO sa;
-GRANT USAGE, SELECT ON ALL SEQUENCES IN SCHEMA crypto_scout TO sa;
+GRANT ALL PRIVILEGES ON SCHEMA crypto_scout TO crypto_scout_db;
+GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA crypto_scout TO crypto_scout_db;
+GRANT USAGE, SELECT ON ALL SEQUENCES IN SCHEMA crypto_scout TO crypto_scout_db;
  
 -- Add compression after the table is created and permissions are granted
 ALTER TABLE crypto_scout.cmc_fgi SET (

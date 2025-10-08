@@ -47,7 +47,7 @@ Quick start
    # Required minimal content (edit as needed):
    # POSTGRES_HOST=postgres
    # POSTGRES_DB=crypto_scout
-   # POSTGRES_USER=sa
+   # POSTGRES_USER=crypto_scout_db
    # POSTGRES_PASSWORD=...strong secret...
    # SCHEDULE=@daily
    # BACKUP_KEEP_DAYS=7

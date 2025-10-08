@@ -36,7 +36,7 @@ time-series data from Bybit and CoinMarketCap.
         - Init: `./script/init.sql -> /docker-entrypoint-initdb.d/init.sql:ro`
     - **Environment**
         - `env_file: ./secrets/timescaledb.env`
-        - `POSTGRES_DB=crypto_scout`, `POSTGRES_USER=sa`, `TZ=UTC`
+        - `POSTGRES_DB=crypto_scout`, `POSTGRES_USER=crypto_scout_db`, `TZ=UTC`
     - **Healthcheck**
         - `pg_isready -U $POSTGRES_USER -d $POSTGRES_DB` with `start_period: 30s`
     - **Resources**
@@ -69,7 +69,7 @@ Create `secrets/timescaledb.env` (do not commit):
 
 ```
 POSTGRES_PASSWORD=change_me
-POSTGRES_USER=sa
+POSTGRES_USER=crypto_scout
 POSTGRES_DB=crypto_scout
 ```
 
@@ -78,7 +78,7 @@ Create `secrets/postgres-backup.env` (do not commit):
 ```
 POSTGRES_HOST=postgres
 POSTGRES_DB=crypto_scout
-POSTGRES_USER=sa
+POSTGRES_USER=crypto_scout
 POSTGRES_PASSWORD=change_me
 SCHEDULE=@daily
 BACKUP_KEEP_DAYS=7
@@ -130,7 +130,7 @@ POSTGRES_EXTRA_OPTS=--schema=crypto_scout --blobs
 
 ### Permissions
 
-- Grants to `sa` on schema, tables, and sequences.
+- Grants to `crypto_scout_db` on schema, tables, and sequences.
 
 ---
 
@@ -151,7 +151,7 @@ podman compose up -d
 - **Connect**
 
 ```sh
-psql "host=localhost port=5432 dbname=crypto_scout user=sa"
+psql "host=localhost port=5432 dbname=crypto_scout user=crypto_scout"
 ```
 
 - **Backups**
