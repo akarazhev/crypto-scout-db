@@ -18,10 +18,8 @@ CREATE TABLE IF NOT EXISTS crypto_scout.cmc_fgi (
     CONSTRAINT fgi_pkey PRIMARY KEY (id, timestamp)
 );
  
--- Create indexes for cmc_fgi table first (before hypertable conversion)
+-- Create index for cmc_fgi table first (before hypertable conversion)
 CREATE INDEX IF NOT EXISTS idx_cmc_fgi_timestamp ON crypto_scout.cmc_fgi(timestamp DESC);
-CREATE INDEX IF NOT EXISTS idx_cmc_fgi_score ON crypto_scout.cmc_fgi(score);
-CREATE INDEX IF NOT EXISTS idx_cmc_fgi_name ON crypto_scout.cmc_fgi(name);
  
 -- Convert the cmc_fgi table to a hypertable partitioned by timestamp
 -- Using 1-day chunks for optimal performance with daily data
