@@ -15,6 +15,15 @@ Required files:
     - `TIMESCALEDB_TUNE_MAX_PARALLEL_WORKERS`
     - `TIMESCALEDB_TUNE_MEMORY`
 
+- `postgres-backup.env` — env file for the backup sidecar providing:
+    - `POSTGRES_HOST`
+    - `SCHEDULE`
+    - `BACKUP_KEEP_DAYS`
+    - `BACKUP_KEEP_WEEKS`
+    - `BACKUP_KEEP_MONTHS`
+    - `POSTGRES_EXTRA_OPTS`
+    - Optionally (copy from `timescaledb.env` if you want the file self-contained): `POSTGRES_DB`, `POSTGRES_USER`, `POSTGRES_PASSWORD`
+
 Quick start
 
 1) Create the directory if missing:
@@ -37,6 +46,23 @@ Quick start
 3) Restrict permissions (recommended on Unix/macOS):
    chmod 600 ./secrets/timescaledb.env
 
+4) Create backup env file from example:
+   cp ./secrets/postgres-backup.env.example ./secrets/postgres-backup.env
+   # Required minimal content (edit as needed):
+   # POSTGRES_HOST=postgres
+   # SCHEDULE=@daily
+   # BACKUP_KEEP_DAYS=7
+   # BACKUP_KEEP_WEEKS=4
+   # BACKUP_KEEP_MONTHS=6
+   # POSTGRES_EXTRA_OPTS=--schema=crypto_scout --blobs
+   # Credentials can be copied from timescaledb.env if you prefer duplication:
+   # POSTGRES_DB=crypto_scout
+   # POSTGRES_USER=sa
+   # POSTGRES_PASSWORD=...strong secret...
+   chmod 600 ./secrets/postgres-backup.env
+
 Notes
 
 - Never commit real secrets. Only commit example files.
+- For the backup sidecar, `podman-compose.yml` loads both `timescaledb.env` and `postgres-backup.env`. Values in
+  `postgres-backup.env` override duplicates from `timescaledb.env` if present.
