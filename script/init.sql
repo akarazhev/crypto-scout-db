@@ -76,7 +76,7 @@ SELECT public.create_hypertable('crypto_scout.bybit_spot_tickers_eth_usdt', 'tim
 -- Create Bybit Launch Pool table in crypto_scout schema
 CREATE TABLE IF NOT EXISTS crypto_scout.bybit_lpl (
     id BIGSERIAL,
-    return_coin VARCHAR(50) NOT NULL,
+    return_coin TEXT NOT NULL,
     return_coin_icon TEXT NOT NULL,
     description TEXT NOT NULL,
     website TEXT NOT NULL,
@@ -91,7 +91,6 @@ CREATE TABLE IF NOT EXISTS crypto_scout.bybit_lpl (
  
 -- Create indexes for bybit_lpl table first (before hypertable conversion)
 CREATE INDEX IF NOT EXISTS idx_bybit_lpl_stake_begin_time ON crypto_scout.bybit_lpl(stake_begin_time DESC);
-CREATE INDEX IF NOT EXISTS idx_bybit_lpl_return_coin ON crypto_scout.bybit_lpl(return_coin);
  
 -- Convert the bybit_lpl table to a hypertable partitioned by stake_begin_time
 -- Using 1-day chunks for optimal performance with time-series data
