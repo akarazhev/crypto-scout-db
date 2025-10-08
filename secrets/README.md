@@ -6,25 +6,27 @@ This folder holds local secrets used by `podman-compose.yml` for TimescaleDB. Fi
 Required files:
 
 - `timescaledb.env` — env file providing:
-    - `POSTGRES_DB`
-    - `POSTGRES_USER`
-    - `POSTGRES_PASSWORD`
-    - `TIMESCALEDB_TELEMETRY`
-    - `TIMESCALEDB_TUNE_MAX_CONNECTIONS`
-    - `TIMESCALEDB_TUNE_MAX_BACKGROUND_WORKERS`
-    - `TIMESCALEDB_TUNE_MAX_PARALLEL_WORKERS`
-    - `TIMESCALEDB_TUNE_MEMORY`
+  - `POSTGRES_DB`
+  - `POSTGRES_USER`
+  - `POSTGRES_PASSWORD`
+  - `TIMESCALEDB_TELEMETRY`
+  - `TIMESCALEDB_TUNE_MAX_CONNECTIONS`
+  - `TIMESCALEDB_TUNE_MAX_BACKGROUND_WORKERS`
+  - `TIMESCALEDB_TUNE_MAX_PARALLEL_WORKERS`
+  - `TIMESCALEDB_TUNE_MEMORY`
+  - `POSTGRES_INITDB_ARGS` (optional; applies at initdb only)
 
 - `postgres-backup.env` — env file for the backup sidecar providing:
-    - `POSTGRES_HOST`, 
-    - `POSTGRES_DB`, 
-    - `POSTGRES_USER`, 
-    - `POSTGRES_PASSWORD`
-    - `SCHEDULE`, 
-    - `BACKUP_KEEP_DAYS`, 
-    - `BACKUP_KEEP_WEEKS`, 
-    - `BACKUP_KEEP_MONTHS`
-    - `POSTGRES_EXTRA_OPTS`
+   - `POSTGRES_HOST`
+   - `POSTGRES_DB`
+   - `POSTGRES_USER`
+   - `POSTGRES_PASSWORD`
+   - `SCHEDULE`
+   - `BACKUP_KEEP_DAYS`
+   - `BACKUP_KEEP_WEEKS`
+   - `BACKUP_KEEP_MONTHS`
+   - `POSTGRES_EXTRA_OPTS`
+   - `POSTGRES_PASSWORD`
       
 Quick start
 
@@ -47,11 +49,12 @@ Quick start
    TIMESCALEDB_TUNE_MAX_BACKGROUND_WORKERS=8
    TIMESCALEDB_TUNE_MAX_PARALLEL_WORKERS=4
    TIMESCALEDB_TUNE_MEMORY=512MB
+   POSTGRES_INITDB_ARGS=--auth=scram-sha-256
    
-   printf "POSTGRES_DB=%s\nPOSTGRES_USER=%s\nPOSTGRES_PASSWORD=%s\nTIMESCALEDB_TELEMETRY=%s\nTIMESCALEDB_TUNE_MAX_CONNECTIONS=%s\nTIMESCALEDB_TUNE_MAX_BACKGROUND_WORKERS=%s\nTIMESCALEDB_TUNE_MAX_PARALLEL_WORKERS=%s\nTIMESCALEDB_TUNE_MEMORY=%s\n" \
+   printf "POSTGRES_DB=%s\nPOSTGRES_USER=%s\nPOSTGRES_PASSWORD=%s\nTIMESCALEDB_TELEMETRY=%s\nTIMESCALEDB_TUNE_MAX_CONNECTIONS=%s\nTIMESCALEDB_TUNE_MAX_BACKGROUND_WORKERS=%s\nTIMESCALEDB_TUNE_MAX_PARALLEL_WORKERS=%s\nTIMESCALEDB_TUNE_MEMORY=%s\nPOSTGRES_INITDB_ARGS=%s\n" \
      "$POSTGRES_DB" "$POSTGRES_USER" "$POSTGRES_PASSWORD" "$TIMESCALEDB_TELEMETRY" "$TIMESCALEDB_TUNE_MAX_CONNECTIONS" \
-     "$TIMESCALEDB_TUNE_MAX_BACKGROUND_WORKERS" "$TIMESCALEDB_TUNE_MAX_PARALLEL_WORKERS" "$TIMESCALEDB_TUNE_MEMORY" \
-     > ./secrets/timescaledb.env
+     "$TIMESCALEDB_TUNE_MAX_BACKGROUND_WORKERS" "$TIMESCALEDB_TUNE_MAX_PARALLEL_WORKERS" "$TIMESCALEDB_TUNE_MEMORY" \ 
+     "$POSTGRES_INITDB_ARGS" > ./secrets/timescaledb.env
    
    chmod 600 ./secrets/timescaledb.env
    ```
@@ -84,3 +87,5 @@ Notes
   `timescaledb.env`. Mismatched credentials will cause backup failures.
 - `POSTGRES_HOST` in `postgres-backup.env` should be the compose service name of the database: `postgres`.
 - Files matching `secrets/*.env` are gitignored (see project `.gitignore`). Keep permissions restrictive (`chmod 600`).
+- To harden local auth during bootstrap, add `POSTGRES_INITDB_ARGS=--auth=scram-sha-256` to `secrets/timescaledb.env`.
+  This only takes effect when creating a new data directory; to apply later, re-initialize `./data/postgresql`.

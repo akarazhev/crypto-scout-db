@@ -1,8 +1,5 @@
 CREATE SCHEMA IF NOT EXISTS crypto_scout;
 
--- Create extension for TimescaleDB (must be in public schema)
-CREATE EXTENSION IF NOT EXISTS timescaledb CASCADE;
-
 -- Set the search path to include all necessary schemas
 SET search_path TO public, crypto_scout;
  
@@ -99,20 +96,20 @@ SELECT public.create_hypertable('crypto_scout.bybit_lpl', 'stake_begin_time', ch
 -- Set up compression policy for bybit_spot_tickers_btc_usdt
 ALTER TABLE crypto_scout.bybit_spot_tickers_btc_usdt SET (
     timescaledb.compress,
-    timescaledb.compress_orderby = 'timestamp DESC'
+    timescaledb.compress_orderby = 'timestamp DESC, id DESC'
 );
  
 -- Set up compression policy for bybit_spot_tickers_eth_usdt
 ALTER TABLE crypto_scout.bybit_spot_tickers_eth_usdt SET (
     timescaledb.compress,
-    timescaledb.compress_orderby = 'timestamp DESC'
+    timescaledb.compress_orderby = 'timestamp DESC, id DESC'
 );
  
 -- Add compression for bybit_lpl table
 ALTER TABLE crypto_scout.bybit_lpl SET (
     timescaledb.compress,
     timescaledb.compress_segmentby = 'return_coin',
-    timescaledb.compress_orderby = 'stake_begin_time DESC'
+    timescaledb.compress_orderby = 'stake_begin_time DESC, id DESC'
 );
  
 -- Compress chunks that are older than 7 days
@@ -129,7 +126,7 @@ GRANT USAGE, SELECT ON ALL SEQUENCES IN SCHEMA crypto_scout TO crypto_scout_db;
 ALTER TABLE crypto_scout.cmc_fgi SET (
     timescaledb.compress,
     timescaledb.compress_segmentby = 'name',
-    timescaledb.compress_orderby = 'timestamp DESC'
+    timescaledb.compress_orderby = 'timestamp DESC, id DESC'
 );
  
 -- Compress chunks that are older than 7 days

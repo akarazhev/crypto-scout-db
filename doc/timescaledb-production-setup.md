@@ -21,7 +21,6 @@ time-series data from Bybit and CoinMarketCap.
     - Increased resource limits to align with tuning.
 - **SQL init**: `script/init.sql`
     - Idempotent hypertables with 1-day chunking.
-    - Compression with `compress_orderby` on time columns.
     - Reorder policies on timestamp indexes.
     - Retention policies for Bybit/CMC data.
 
@@ -35,12 +34,11 @@ time-series data from Bybit and CoinMarketCap.
   These are benign and do not affect operation; no action taken.
 - **[bgworker-template]** `TimescaleDB background worker connected to template database, exiting` occurs briefly during
   extension installation. This is expected and harmless in init phase.
-- **[compression-warnings]** Default `segment_by` suggestion messages for ticker hypertables were observed. We
-  intentionally configured:
-    - Tickers (`bybit_spot_tickers_*`): `compress_orderby = 'timestamp DESC'` and no `segment_by` to avoid
-      high-cardinality groupings (e.g., `id`).
-    - Launch Pool (`bybit_lpl`): `compress_segmentby = 'return_coin'`, `compress_orderby = 'stake_begin_time DESC'`.
-      This aligns with TimescaleDB guidance; informational notices during init are acceptable.
+- **[compression-warnings]** We updated compression ordering to stabilize blocks and address notices:
+    - Tickers (`bybit_spot_tickers_*`): `compress_orderby = 'timestamp DESC, id DESC'` (no `segment_by`).
+    - Launch Pool (`bybit_lpl`): `compress_segmentby = 'return_coin'`, `compress_orderby = 'stake_begin_time DESC, id DESC'`.
+    - FGI (`cmc_fgi`): `compress_segmentby = 'name'`, `compress_orderby = 'timestamp DESC, id DESC'`.
+      Informational messages during init are acceptable; future compression will use the updated order-by.
 - **[schema-type-warning]** `VARCHAR(50)` for `return_coin` changed to `TEXT` as suggested by Timescale during init.
 - **[backup-sidecar]** Backup sidecar started with `@daily` cron and exposes port `8080` for health checking. Ensure
   `secrets/postgres-backup.env` exists and credentials match `timescaledb.env`.
@@ -109,9 +107,14 @@ POSTGRES_EXTRA_OPTS=--schema=crypto_scout --blobs
 
 ---
 
+## Security: Harden local auth on init
+
+- To enable SCRAM for local connections during cluster bootstrap, set `POSTGRES_INITDB_ARGS=--auth=scram-sha-256` in `secrets/timescaledb.env`.
+- This only applies when the data directory is empty. To apply later, re-initialize the data volume.
+
 ## Database schema and policies (script/init.sql)
 
-- **Extension**: `CREATE EXTENSION IF NOT EXISTS timescaledb CASCADE;`
+- **Extension**: installed by image init scripts; `script/init.sql` does not create the extension.
 - **Schema**: `CREATE SCHEMA IF NOT EXISTS crypto_scout;` and `SET search_path TO public, crypto_scout;`
 
 ### Tables and hypertables
@@ -132,11 +135,43 @@ POSTGRES_EXTRA_OPTS=--schema=crypto_scout --blobs
 ### Compression
 
 - Enabled on all hypertables with time-order:
-    - `bybit_spot_tickers_btc_usdt`: `compress_orderby = 'timestamp DESC'`
-    - `bybit_spot_tickers_eth_usdt`: `compress_orderby = 'timestamp DESC'`
-    - `bybit_lpl`: `compress_segmentby = 'return_coin'`, `compress_orderby = 'stake_begin_time DESC'`
-    - `cmc_fgi`: `compress_segmentby = 'name'`, `compress_orderby = 'timestamp DESC'`
+    - `bybit_spot_tickers_btc_usdt`: `compress_orderby = 'timestamp DESC, id DESC'`
+    - `bybit_spot_tickers_eth_usdt`: `compress_orderby = 'timestamp DESC, id DESC'`
+    - `bybit_lpl`: `compress_segmentby = 'return_coin'`, `compress_orderby = 'stake_begin_time DESC, id DESC'`
+    - `cmc_fgi`: `compress_segmentby = 'name'`, `compress_orderby = 'timestamp DESC, id DESC'`
 - **Compression policy**: compress chunks older than 7 days for all hypertables.
+
+#### Apply to an existing initialized cluster
+
+Run these once to update compression settings without rebuilding the cluster:
+
+```sql
+-- BTC/USDT
+ALTER TABLE crypto_scout.bybit_spot_tickers_btc_usdt SET (
+  timescaledb.compress,
+  timescaledb.compress_orderby = 'timestamp DESC, id DESC'
+);
+
+-- ETH/USDT
+ALTER TABLE crypto_scout.bybit_spot_tickers_eth_usdt SET (
+  timescaledb.compress,
+  timescaledb.compress_orderby = 'timestamp DESC, id DESC'
+);
+
+-- Launch Pool
+ALTER TABLE crypto_scout.bybit_lpl SET (
+  timescaledb.compress,
+  timescaledb.compress_segmentby = 'return_coin',
+  timescaledb.compress_orderby = 'stake_begin_time DESC, id DESC'
+);
+
+-- Fear & Greed Index
+ALTER TABLE crypto_scout.cmc_fgi SET (
+  timescaledb.compress,
+  timescaledb.compress_segmentby = 'name',
+  timescaledb.compress_orderby = 'timestamp DESC, id DESC'
+);
+```
 
 ### Reorder policies
 
