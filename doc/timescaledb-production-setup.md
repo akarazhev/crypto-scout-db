@@ -27,6 +27,26 @@ time-series data from Bybit and CoinMarketCap.
 
 ---
 
+## Log review and remediations
+
+- **[initialization-success]** Database initialized, TimescaleDB extension installed, tuning applied. Service restarts
+  once to apply tuned `postgresql.conf` and then becomes ready: `database system is ready to accept connections`.
+- **[locale-warning]** `sh: locale: not found` and `no usable system locales were found` during init on Alpine base.
+  These are benign and do not affect operation; no action taken.
+- **[bgworker-template]** `TimescaleDB background worker connected to template database, exiting` occurs briefly during
+  extension installation. This is expected and harmless in init phase.
+- **[compression-warnings]** Default `segment_by` suggestion messages for ticker hypertables were observed. We
+  intentionally configured:
+    - Tickers (`bybit_spot_tickers_*`): `compress_orderby = 'timestamp DESC'` and no `segment_by` to avoid
+      high-cardinality groupings (e.g., `id`).
+    - Launch Pool (`bybit_lpl`): `compress_segmentby = 'return_coin'`, `compress_orderby = 'stake_begin_time DESC'`.
+      This aligns with TimescaleDB guidance; informational notices during init are acceptable.
+- **[schema-type-warning]** `VARCHAR(50)` for `return_coin` changed to `TEXT` as suggested by Timescale during init.
+- **[backup-sidecar]** Backup sidecar started with `@daily` cron and exposes port `8080` for health checking. Ensure
+  `secrets/postgres-backup.env` exists and credentials match `timescaledb.env`.
+
+---
+
 ## Container services (podman-compose.yml)
 
 - **Image**: `timescale/timescaledb:latest-pg13`
@@ -36,7 +56,7 @@ time-series data from Bybit and CoinMarketCap.
         - Init: `./script/init.sql -> /docker-entrypoint-initdb.d/init.sql:ro`
     - **Environment**
         - `env_file: ./secrets/timescaledb.env`
-        - `POSTGRES_DB=crypto_scout`, `POSTGRES_USER=crypto_scout_db`, `TZ=UTC`
+        - `POSTGRES_DB=crypto_scout`, `POSTGRES_USER=crypto_scout_db`
     - **Healthcheck**
         - `pg_isready -U $POSTGRES_USER -d $POSTGRES_DB` with `start_period: 30s`
     - **Resources**
@@ -69,7 +89,7 @@ Create `secrets/timescaledb.env` (do not commit):
 
 ```
 POSTGRES_PASSWORD=change_me
-POSTGRES_USER=crypto_scout
+POSTGRES_USER=crypto_scout_db
 POSTGRES_DB=crypto_scout
 ```
 
@@ -78,7 +98,7 @@ Create `secrets/postgres-backup.env` (do not commit):
 ```
 POSTGRES_HOST=postgres
 POSTGRES_DB=crypto_scout
-POSTGRES_USER=crypto_scout
+POSTGRES_USER=crypto_scout_db
 POSTGRES_PASSWORD=change_me
 SCHEDULE=@daily
 BACKUP_KEEP_DAYS=7
@@ -151,7 +171,7 @@ podman compose up -d
 - **Connect**
 
 ```sh
-psql "host=localhost port=5432 dbname=crypto_scout user=crypto_scout"
+psql "host=localhost port=5432 dbname=crypto_scout user=crypto_scout_db"
 ```
 
 - **Backups**
