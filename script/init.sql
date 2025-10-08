@@ -96,12 +96,14 @@ SELECT public.create_hypertable('crypto_scout.bybit_lpl', 'stake_begin_time', ch
 -- Set up compression policy for bybit_spot_tickers_btc_usdt
 ALTER TABLE crypto_scout.bybit_spot_tickers_btc_usdt SET (
     timescaledb.compress,
+    timescaledb.compress_segmentby = '',
     timescaledb.compress_orderby = 'timestamp DESC, id DESC'
 );
  
 -- Set up compression policy for bybit_spot_tickers_eth_usdt
 ALTER TABLE crypto_scout.bybit_spot_tickers_eth_usdt SET (
     timescaledb.compress,
+    timescaledb.compress_segmentby = '',
     timescaledb.compress_orderby = 'timestamp DESC, id DESC'
 );
  
