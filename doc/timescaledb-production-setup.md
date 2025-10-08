@@ -58,8 +58,9 @@ time-series data from Bybit and CoinMarketCap.
     - Schedule: `@daily`
     - Retention: `BACKUP_KEEP_DAYS=7`, `BACKUP_KEEP_WEEKS=4`, `BACKUP_KEEP_MONTHS=6`
     - Output: `./backups -> /backups`
-    - Uses same `env_file` for credentials; overrides `POSTGRES_HOST=postgres`, `POSTGRES_DB=crypto_scout`,
-      `POSTGRES_USER=sa`.
+    - Env file: `./secrets/postgres-backup.env` (single source for backup config and credentials)
+    - Required keys: `POSTGRES_HOST`, `POSTGRES_DB`, `POSTGRES_USER`, `POSTGRES_PASSWORD`, `SCHEDULE`,
+      `BACKUP_KEEP_DAYS`, `BACKUP_KEEP_WEEKS`, `BACKUP_KEEP_MONTHS`, `POSTGRES_EXTRA_OPTS`
     - Extra opts: `--schema=crypto_scout --blobs`
 
 ### Required secrets
@@ -70,6 +71,20 @@ Create `secrets/timescaledb.env` (do not commit):
 POSTGRES_PASSWORD=change_me
 POSTGRES_USER=sa
 POSTGRES_DB=crypto_scout
+```
+
+Create `secrets/postgres-backup.env` (do not commit):
+
+```
+POSTGRES_HOST=postgres
+POSTGRES_DB=crypto_scout
+POSTGRES_USER=sa
+POSTGRES_PASSWORD=change_me
+SCHEDULE=@daily
+BACKUP_KEEP_DAYS=7
+BACKUP_KEEP_WEEKS=4
+BACKUP_KEEP_MONTHS=6
+POSTGRES_EXTRA_OPTS=--schema=crypto_scout --blobs
 ```
 
 ---
@@ -122,7 +137,8 @@ POSTGRES_DB=crypto_scout
 ## Operations
 
 - **Start**
-    - Ensure directories exist: `./data/postgresql`, `./backups`, and `./secrets/timescaledb.env` populated.
+    - Ensure directories exist: `./data/postgresql`, `./backups`, and secrets populated (`./secrets/timescaledb.env`,
+      `./secrets/postgres-backup.env`).
     - Bring up with Podman Compose (example):
 
 ```sh
