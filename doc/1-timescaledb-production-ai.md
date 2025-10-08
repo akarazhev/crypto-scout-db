@@ -13,7 +13,7 @@ Take the following roles:
 
 - Use the best practices and design patterns.
 - Do not hallucinate.
-- Use the latest technology stack: `timescale/timescaledb:latest-pg13`.
+- Use the latest technology stack: `timescale/timescaledb:latest-pg17`.
 
 ## Tasks
 

@@ -14,7 +14,7 @@ Take the following roles:
 
 - Use the best practices and design patterns.
 - Do not hallucinate.
-- Use the latest technology stack: `timescale/timescaledb:latest-pg13` and `prodrigestivill/postgres-backup-local:16`.
+- Use the latest technology stack: `timescale/timescaledb:latest-pg17` and `prodrigestivill/postgres-backup-local:latest`.
 
 ## Tasks
 

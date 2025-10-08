@@ -47,7 +47,7 @@ time-series data from Bybit and CoinMarketCap.
 
 ## Container services (podman-compose.yml)
 
-- **Image**: `timescale/timescaledb:latest-pg13`
+- **Image**: `timescale/timescaledb:latest-pg17`
 - **Service**: `postgres`
     - **Persistence**
         - Data: `./data/postgresql -> /var/lib/postgresql/data`
@@ -72,7 +72,7 @@ time-series data from Bybit and CoinMarketCap.
         - `timezone=UTC`, `log_min_duration_statement=500ms`, `log_checkpoints=on`
         - `timescaledb.telemetry_level=off`
 
-- **Backup sidecar**: `pgbackups` (`prodrigestivill/postgres-backup-local:16`)
+- **Backup sidecar**: `pgbackups` (`prodrigestivill/postgres-backup-local:latest`)
     - Schedule: `@daily`
     - Retention: `BACKUP_KEEP_DAYS=7`, `BACKUP_KEEP_WEEKS=4`, `BACKUP_KEEP_MONTHS=6`
     - Output: `./backups -> /backups`
