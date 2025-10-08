@@ -107,7 +107,7 @@ POSTGRES_EXTRA_OPTS=--schema=crypto_scout --blobs
 - Time indexes for ranges:
     - `idx_cmc_fgi_timestamp`, `idx_bybit_spot_tickers_btc_usdt_timestamp`, `idx_bybit_spot_tickers_eth_usdt_timestamp`,
       `idx_bybit_lpl_stake_begin_time`
-- Selectivity helpers: `idx_cmc_fgi_score`, `idx_cmc_fgi_name`, `idx_bybit_lpl_return_coin`.
+- Selectivity helpers: `idx_bybit_lpl_return_coin`.
 
 ### Compression
 
