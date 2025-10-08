@@ -1,8 +1,7 @@
 # Context: Logs checks of the running `timescaledb` and `postgres-backup` containers as the production ready service
 
-In this `crypto-scout-db` project we have configured the `timescaledb` and `postgres-backup` servers in containers for 
-messaging between services, collect crypto data and backups. So you will need to check logs and make sure that 
-the service is running correctly.
+In this `crypto-scout-db` project we have configured the `timescaledb` and `postgres-backup` servers in containers to 
+collect crypto data and backups. So you will need to check logs and make sure that the service is running correctly.
 
 ## Roles
 
