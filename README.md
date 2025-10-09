@@ -9,8 +9,7 @@ pre-tuned PostgreSQL, schema bootstrap, compression, retention, and daily backup
 
 - **TimescaleDB 17 container** (`timescale/timescaledb:latest-pg17`) with tuned PostgreSQL params.
 - **Schema bootstrap** via `script/init.sql`:
-    - Hypertables with 1-day chunks for: `cmc_fgi`, `bybit_spot_tickers_btc_usdt`, `bybit_spot_tickers_eth_usdt`,
-      `bybit_lpl`.
+    - Hypertables with 1-day chunks for: `cmc_fgi`, `bybit_spot_tickers`, `bybit_lpl`.
     - Compression policies (compress after 7 days) and reorder policies on time indexes.
     - Retention policies (Bybit tickers: 180 days; FGI/LPL: ~730 days).
     - Extensions: `timescaledb`, `pg_stat_statements`.
@@ -97,10 +96,10 @@ Defined in `script/init.sql`:
 - Schema: `crypto_scout` and persisted `search_path`.
 - Hypertables (1-day chunks):
     - `crypto_scout.cmc_fgi (timestamp)`
-    - `crypto_scout.bybit_spot_tickers_btc_usdt (timestamp)`
-    - `crypto_scout.bybit_spot_tickers_eth_usdt (timestamp)`
+    - `crypto_scout.bybit_spot_tickers (timestamp)`
     - `crypto_scout.bybit_lpl (stake_begin_time)`
 - Indexes on time columns for efficient range scans.
+- Selectivity index for symbol queries: `idx_bybit_spot_tickers_symbol_timestamp` on `(symbol, timestamp DESC)`.
 - Compression policies: compress chunks older than 7 days.
 - Reorder policies on the time indexes of all hypertables.
 - Retention policies:

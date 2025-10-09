@@ -29,7 +29,7 @@ time-series data from Bybit and CoinMarketCap.
     - Ensures extensions exist: `timescaledb` and `pg_stat_statements`.
     - Persists `search_path` defaults via `ALTER DATABASE` and `ALTER ROLE ... IN DATABASE ...`.
     - Sets ownership of tables to `crypto_scout_db` and default privileges for future objects.
-    - No additional selectivity index beyond time-based indexes is created by `script/init.sql`.
+    - Adds a selectivity index `idx_bybit_spot_tickers_symbol_timestamp` on `(symbol, timestamp DESC)` for per-symbol queries.
 
 ---
 
@@ -42,7 +42,7 @@ time-series data from Bybit and CoinMarketCap.
 - **[bgworker-template]** `TimescaleDB background worker connected to template database, exiting` occurs briefly during
   extension installation. This is expected and harmless in init phase.
 - **[compression-warnings]** We updated compression ordering to stabilize blocks and address notices:
-    - Tickers (`bybit_spot_tickers_*`): `compress_orderby = 'timestamp DESC, id DESC'` (no `segment_by`).
+    - Tickers (`bybit_spot_tickers`): `compress_segmentby = 'symbol'`, `compress_orderby = 'timestamp DESC, id DESC'`.
     - Launch Pool (`bybit_lpl`): `compress_segmentby = 'return_coin'`,
       `compress_orderby = 'stake_begin_time DESC, id DESC'`.
     - FGI (`cmc_fgi`): `compress_segmentby = 'name'`, `compress_orderby = 'timestamp DESC, id DESC'`.
@@ -133,29 +133,25 @@ POSTGRES_EXTRA_OPTS=--schema=crypto_scout --blobs
 ## Database schema and policies (script/init.sql)
 
 - **Extensions**: `CREATE EXTENSION IF NOT EXISTS timescaledb;` and `CREATE EXTENSION IF NOT EXISTS pg_stat_statements;`
-- **Schema/search_path**: `CREATE SCHEMA IF NOT EXISTS crypto_scout;` and `SET search_path TO public, crypto_scout;`
   with persisted defaults via `ALTER DATABASE` and `ALTER ROLE ... IN DATABASE ...`.
 
 ### Tables and hypertables
 
 - `crypto_scout.cmc_fgi (timestamp)` → 1-day chunks
-- `crypto_scout.bybit_spot_tickers_btc_usdt (timestamp)` → 1-day chunks
-- `crypto_scout.bybit_spot_tickers_eth_usdt (timestamp)` → 1-day chunks
+- `crypto_scout.bybit_spot_tickers (timestamp)` → 1-day chunks
 - `crypto_scout.bybit_lpl (stake_begin_time)` → 1-day chunks
 - Hypertable creation is idempotent (`if_not_exists => TRUE`).
 
 ### Indexes
 
 - Time indexes for ranges:
-    - `idx_cmc_fgi_timestamp`, `idx_bybit_spot_tickers_btc_usdt_timestamp`, `idx_bybit_spot_tickers_eth_usdt_timestamp`,
-      `idx_bybit_lpl_stake_begin_time`
-- No additional selectivity helpers are created by `script/init.sql`.
+    - `idx_cmc_fgi_timestamp`, `idx_bybit_spot_tickers_timestamp`, `idx_bybit_lpl_stake_begin_time`
+- Selectivity helper: `idx_bybit_spot_tickers_symbol_timestamp` on `(symbol, timestamp DESC)`.
 
 ### Compression
 
 - Enabled on all hypertables with time-order:
-    - `bybit_spot_tickers_btc_usdt`: `compress_orderby = 'timestamp DESC, id DESC'`
-    - `bybit_spot_tickers_eth_usdt`: `compress_orderby = 'timestamp DESC, id DESC'`
+    - `bybit_spot_tickers`: `compress_segmentby = 'symbol'`, `compress_orderby = 'timestamp DESC, id DESC'`
     - `bybit_lpl`: `compress_segmentby = 'return_coin'`, `compress_orderby = 'stake_begin_time DESC, id DESC'`
     - `cmc_fgi`: `compress_segmentby = 'name'`, `compress_orderby = 'timestamp DESC, id DESC'`
 - **Compression policy**: compress chunks older than 7 days for all hypertables.
@@ -165,15 +161,10 @@ POSTGRES_EXTRA_OPTS=--schema=crypto_scout --blobs
 Run these once to update compression settings without rebuilding the cluster:
 
 ```sql
--- BTC/USDT
-ALTER TABLE crypto_scout.bybit_spot_tickers_btc_usdt SET (
+-- Bybit Spot Tickers (unified)
+ALTER TABLE crypto_scout.bybit_spot_tickers SET (
   timescaledb.compress,
-  timescaledb.compress_orderby = 'timestamp DESC, id DESC'
-);
-
--- ETH/USDT
-ALTER TABLE crypto_scout.bybit_spot_tickers_eth_usdt SET (
-  timescaledb.compress,
+  timescaledb.compress_segmentby = 'symbol',
   timescaledb.compress_orderby = 'timestamp DESC, id DESC'
 );
 
@@ -195,7 +186,7 @@ ALTER TABLE crypto_scout.cmc_fgi SET (
 ### Reorder policies
 
 - Reorder open chunks by their time index for better locality:
-    - BTC/USDT, ETH/USDT, FGI by timestamp index; LPL by `stake_begin_time` index.
+    - Bybit Spot Tickers and FGI by timestamp index; LPL by `stake_begin_time` index.
 
 ### Retention policies
 
