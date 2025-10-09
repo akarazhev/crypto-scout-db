@@ -1,8 +1,8 @@
 # Context: Document writing of the `timescaledb` production ready service
 
-In this `crypto-scout-db` project the `timescaledb` server has been configured in a container for messaging between
-services and to collect crypto data. So you will need to write professional documentation of the `crypto-scout-db`
-project that it is ready for production.
+In this `crypto-scout-db` project the `timescaledb` server has been configured in a container to collect crypto data 
+with `backups`. So you will need to write professional documentation of the `crypto-scout-db` project that it is 
+ready for production.
 
 ## Roles
 
