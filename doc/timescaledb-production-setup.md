@@ -29,7 +29,7 @@ time-series data from Bybit and CoinMarketCap.
     - Ensures extensions exist: `timescaledb` and `pg_stat_statements`.
     - Persists `search_path` defaults via `ALTER DATABASE` and `ALTER ROLE ... IN DATABASE ...`.
     - Sets ownership of tables to `crypto_scout_db` and default privileges for future objects.
-    - Adds a selective index `idx_bybit_lpl_return_coin`.
+    - No additional selectivity index beyond time-based indexes is created by `script/init.sql`.
 
 ---
 
@@ -48,7 +48,7 @@ time-series data from Bybit and CoinMarketCap.
     - FGI (`cmc_fgi`): `compress_segmentby = 'name'`, `compress_orderby = 'timestamp DESC, id DESC'`.
       Informational messages during init are acceptable; future compression will use the updated order-by.
 - **[schema-type-warning]** `VARCHAR(50)` for `return_coin` changed to `TEXT` as suggested by Timescale during init.
-- **[backup-sidecar]** Backup sidecar started with `@daily` cron and exposes port `8080` for health checking. Ensure
+- **[backup-sidecar]** Backup sidecar started with `@daily` cron. Ensure
   `secrets/postgres-backup.env` exists and credentials match `timescaledb.env`.
 
   Note: the chosen image does not expose an HTTP health endpoint; monitor container logs and the presence of new files
@@ -149,7 +149,7 @@ POSTGRES_EXTRA_OPTS=--schema=crypto_scout --blobs
 - Time indexes for ranges:
     - `idx_cmc_fgi_timestamp`, `idx_bybit_spot_tickers_btc_usdt_timestamp`, `idx_bybit_spot_tickers_eth_usdt_timestamp`,
       `idx_bybit_lpl_stake_begin_time`
-- Selectivity helpers: `idx_bybit_lpl_return_coin`.
+- No additional selectivity helpers are created by `script/init.sql`.
 
 ### Compression
 
@@ -271,3 +271,23 @@ psql "host=localhost port=5432 dbname=crypto_scout user=crypto_scout_db"
 - Compose: `podman-compose.yml`
 - Schema/Policies: `script/init.sql`
 - This document: `doc/timescaledb-production-setup.md`
+
+---
+
+## Documentation update report (2025-10-09)
+
+- **README.md**
+    - Rewrote with production documentation covering: features, architecture, quick start, secrets, schema/policies,
+      operations, directory layout, license, and a short GitHub description.
+    - All details sourced from `podman-compose.yml`, `script/init.sql`, and `secrets/*.env.example`.
+
+- **Corrections in this document** (`doc/timescaledb-production-setup.md`)
+    - Removed reference to a non-existent index `idx_bybit_lpl_return_coin`.
+    - Removed mention of backup sidecar exposing port `8080`; clarified verification via logs and files in `./backups/`.
+    - Confirmed indexes, compression, reorder, and retention settings match `script/init.sql`.
+
+- **Validation**
+    - Secrets are configured via env files in `secrets/` and are gitignored per `.gitignore`.
+    - Backup configuration is driven solely by `secrets/postgres-backup.env` as per `podman-compose.yml`.
+
+No configuration changes were made to services—documentation now accurately reflects the current repository state.
