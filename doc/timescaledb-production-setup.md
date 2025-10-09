@@ -19,10 +19,17 @@ time-series data from Bybit and CoinMarketCap.
     - Added PostgreSQL tuning via `command: [postgres, -c ...]`.
     - Added daily backup sidecar service with retention.
     - Increased resource limits to align with tuning.
+    - Enabled observability: `shared_preload_libraries=timescaledb,pg_stat_statements`, `pg_stat_statements.track=all`,
+      `pg_stat_statements.max=10000`, `track_io_timing=on`, `track_functions=pl`.
+    - Set container timezone `TZ=UTC` and `stop_grace_period: 1m` for graceful shutdown.
 - **SQL init**: `script/init.sql`
     - Idempotent hypertables with 1-day chunking.
     - Reorder policies on timestamp indexes.
     - Retention policies for Bybit/CMC data.
+    - Ensures extensions exist: `timescaledb` and `pg_stat_statements`.
+    - Persists `search_path` defaults via `ALTER DATABASE` and `ALTER ROLE ... IN DATABASE ...`.
+    - Sets ownership of tables to `crypto_scout_db` and default privileges for future objects.
+    - Adds a selective index `idx_bybit_lpl_return_coin`.
 
 ---
 
@@ -36,12 +43,16 @@ time-series data from Bybit and CoinMarketCap.
   extension installation. This is expected and harmless in init phase.
 - **[compression-warnings]** We updated compression ordering to stabilize blocks and address notices:
     - Tickers (`bybit_spot_tickers_*`): `compress_orderby = 'timestamp DESC, id DESC'` (no `segment_by`).
-    - Launch Pool (`bybit_lpl`): `compress_segmentby = 'return_coin'`, `compress_orderby = 'stake_begin_time DESC, id DESC'`.
+    - Launch Pool (`bybit_lpl`): `compress_segmentby = 'return_coin'`,
+      `compress_orderby = 'stake_begin_time DESC, id DESC'`.
     - FGI (`cmc_fgi`): `compress_segmentby = 'name'`, `compress_orderby = 'timestamp DESC, id DESC'`.
       Informational messages during init are acceptable; future compression will use the updated order-by.
 - **[schema-type-warning]** `VARCHAR(50)` for `return_coin` changed to `TEXT` as suggested by Timescale during init.
 - **[backup-sidecar]** Backup sidecar started with `@daily` cron and exposes port `8080` for health checking. Ensure
   `secrets/postgres-backup.env` exists and credentials match `timescaledb.env`.
+
+  Note: the chosen image does not expose an HTTP health endpoint; monitor container logs and the presence of new files
+  in `./backups` to verify successful runs.
 
 ---
 
@@ -55,6 +66,7 @@ time-series data from Bybit and CoinMarketCap.
     - **Environment**
         - `env_file: ./secrets/timescaledb.env`
         - `POSTGRES_DB=crypto_scout`, `POSTGRES_USER=crypto_scout_db`
+        - `TZ=UTC`
     - **Healthcheck**
         - `pg_isready -U $POSTGRES_USER -d $POSTGRES_DB` with `start_period: 30s`
     - **Resources**
@@ -62,7 +74,7 @@ time-series data from Bybit and CoinMarketCap.
         - `ulimits: nofile soft=262144 hard=262144`
         - `deploy.resources.limits: cpus=2, memory=8G`
     - **PostgreSQL tuning (command)**
-        - `shared_preload_libraries=timescaledb`
+        - `shared_preload_libraries=timescaledb,pg_stat_statements`
         - `max_connections=200`
         - `shared_buffers=2GB`, `effective_cache_size=6GB`
         - `maintenance_work_mem=1GB`, `work_mem=16MB`, `autovacuum_work_mem=256MB`
@@ -71,12 +83,17 @@ time-series data from Bybit and CoinMarketCap.
         - `checkpoint_timeout=15min`, `checkpoint_completion_target=0.9`
         - `timezone=UTC`, `log_min_duration_statement=500ms`, `log_checkpoints=on`
         - `timescaledb.telemetry_level=off`
+        - `pg_stat_statements.track=all`, `pg_stat_statements.max=10000`
+        - `track_io_timing=on`, `track_functions=pl`
+    - **Lifecycle**
+        - `restart: unless-stopped`, `stop_grace_period: 1m`
 
 - **Backup sidecar**: `pgbackups` (`prodrigestivill/postgres-backup-local:latest`)
     - Schedule: `@daily`
     - Retention: `BACKUP_KEEP_DAYS=7`, `BACKUP_KEEP_WEEKS=4`, `BACKUP_KEEP_MONTHS=6`
     - Output: `./backups -> /backups`
     - Env file: `./secrets/postgres-backup.env` (single source for backup config and credentials)
+    - Environment: `TZ=UTC`
     - Required keys: `POSTGRES_HOST`, `POSTGRES_DB`, `POSTGRES_USER`, `POSTGRES_PASSWORD`, `SCHEDULE`,
       `BACKUP_KEEP_DAYS`, `BACKUP_KEEP_WEEKS`, `BACKUP_KEEP_MONTHS`, `POSTGRES_EXTRA_OPTS`
     - Extra opts: `--schema=crypto_scout --blobs`
@@ -109,13 +126,15 @@ POSTGRES_EXTRA_OPTS=--schema=crypto_scout --blobs
 
 ## Security: Harden local auth on init
 
-- To enable SCRAM for local connections during cluster bootstrap, set `POSTGRES_INITDB_ARGS=--auth=scram-sha-256` in `secrets/timescaledb.env`.
+- To enable SCRAM for local connections during cluster bootstrap, set `POSTGRES_INITDB_ARGS=--auth=scram-sha-256` in
+  `secrets/timescaledb.env`.
 - This only applies when the data directory is empty. To apply later, re-initialize the data volume.
 
 ## Database schema and policies (script/init.sql)
 
-- **Extension**: installed by image init scripts; `script/init.sql` does not create the extension.
-- **Schema**: `CREATE SCHEMA IF NOT EXISTS crypto_scout;` and `SET search_path TO public, crypto_scout;`
+- **Extensions**: `CREATE EXTENSION IF NOT EXISTS timescaledb;` and `CREATE EXTENSION IF NOT EXISTS pg_stat_statements;`
+- **Schema/search_path**: `CREATE SCHEMA IF NOT EXISTS crypto_scout;` and `SET search_path TO public, crypto_scout;`
+  with persisted defaults via `ALTER DATABASE` and `ALTER ROLE ... IN DATABASE ...`.
 
 ### Tables and hypertables
 
@@ -185,7 +204,9 @@ ALTER TABLE crypto_scout.cmc_fgi SET (
 
 ### Permissions
 
+- Ownership of tables set to `crypto_scout_db`.
 - Grants to `crypto_scout_db` on schema, tables, and sequences.
+- Default privileges so future tables/sequences created by `crypto_scout_db` are accessible to the role.
 
 ---
 
@@ -231,7 +252,7 @@ psql "host=localhost port=5432 dbname=crypto_scout user=crypto_scout_db"
 
 - **Security**: credentials in `secrets/timescaledb.env`; init SQL mounted read-only.
 - **Persistence**: data and backups directories exist with correct permissions.
-- **Observability**: slow statements and checkpoints logged.
+- **Observability**: `pg_stat_statements` enabled; slow statements, checkpoints, and I/O timing logged.
 - **Capacity**: container limits align with PostgreSQL memory settings.
 - **Policies**: compression, reorder, and retention present for all hypertables.
 

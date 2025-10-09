@@ -1,8 +1,17 @@
+-- Ensure required extensions are installed in the target database
+CREATE EXTENSION IF NOT EXISTS timescaledb;
+CREATE EXTENSION IF NOT EXISTS pg_stat_statements;
+
+-- Create crypto_scout schema if it doesn't exist
 CREATE SCHEMA IF NOT EXISTS crypto_scout;
 
 -- Set the search path to include all necessary schemas
 SET search_path TO public, crypto_scout;
- 
+
+-- Persist search_path defaults for the database and application role
+ALTER DATABASE crypto_scout SET search_path TO public, crypto_scout;
+ALTER ROLE crypto_scout_db IN DATABASE crypto_scout SET search_path TO public, crypto_scout;
+
 -- Create Fear & Greed Index table in crypto_scout schema
 CREATE TABLE IF NOT EXISTS crypto_scout.cmc_fgi (
     id BIGSERIAL,
@@ -14,6 +23,9 @@ CREATE TABLE IF NOT EXISTS crypto_scout.cmc_fgi (
     -- For hypertables, primary key must include the partitioning column (timestamp)
     CONSTRAINT fgi_pkey PRIMARY KEY (id, timestamp)
 );
+
+-- Set ownership to application role
+ALTER TABLE crypto_scout.cmc_fgi OWNER TO crypto_scout_db;
  
 -- Create index for cmc_fgi table first (before hypertable conversion)
 CREATE INDEX IF NOT EXISTS idx_cmc_fgi_timestamp ON crypto_scout.cmc_fgi(timestamp DESC);
@@ -38,6 +50,9 @@ CREATE TABLE IF NOT EXISTS crypto_scout.bybit_spot_tickers_btc_usdt (
     -- For hypertables, primary key must include the partitioning column (timestamp)
     CONSTRAINT bybit_spot_tickers_btc_usdt_pkey PRIMARY KEY (id, timestamp)
 );
+
+-- Set ownership to application role
+ALTER TABLE crypto_scout.bybit_spot_tickers_btc_usdt OWNER TO crypto_scout_db;
  
 -- Create indexes for bybit_spot_tickers_btc_usdt table first (before hypertable conversion)
 CREATE INDEX IF NOT EXISTS idx_bybit_spot_tickers_btc_usdt_timestamp ON crypto_scout.bybit_spot_tickers_btc_usdt(timestamp DESC);
@@ -58,6 +73,9 @@ CREATE TABLE IF NOT EXISTS crypto_scout.bybit_spot_tickers_eth_usdt (
     -- For hypertables, primary key must include the partitioning column (timestamp)
     CONSTRAINT bybit_spot_tickers_eth_usdt_pkey PRIMARY KEY (id, timestamp)
 );
+
+-- Set ownership to application role
+ALTER TABLE crypto_scout.bybit_spot_tickers_eth_usdt OWNER TO crypto_scout_db;
  
 -- Create indexes for bybit_spot_tickers_eth_usdt table first (before hypertable conversion)
 CREATE INDEX IF NOT EXISTS idx_bybit_spot_tickers_eth_usdt_timestamp ON crypto_scout.bybit_spot_tickers_eth_usdt(timestamp DESC);
@@ -85,6 +103,9 @@ CREATE TABLE IF NOT EXISTS crypto_scout.bybit_lpl (
     -- For hypertables, primary key must include the partitioning column (stake_begin_time)
     CONSTRAINT bybit_lpl_pkey PRIMARY KEY (id, stake_begin_time)
 );
+
+-- Set ownership to application role
+ALTER TABLE crypto_scout.bybit_lpl OWNER TO crypto_scout_db;
  
 -- Create indexes for bybit_lpl table first (before hypertable conversion)
 CREATE INDEX IF NOT EXISTS idx_bybit_lpl_stake_begin_time ON crypto_scout.bybit_lpl(stake_begin_time DESC);
@@ -123,6 +144,10 @@ SELECT add_compression_policy('crypto_scout.bybit_spot_tickers_eth_usdt', INTERV
 GRANT ALL PRIVILEGES ON SCHEMA crypto_scout TO crypto_scout_db;
 GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA crypto_scout TO crypto_scout_db;
 GRANT USAGE, SELECT ON ALL SEQUENCES IN SCHEMA crypto_scout TO crypto_scout_db;
+
+-- Ensure future objects created by the application role have appropriate privileges
+ALTER DEFAULT PRIVILEGES FOR ROLE crypto_scout_db IN SCHEMA crypto_scout GRANT SELECT, INSERT, UPDATE, DELETE ON TABLES TO crypto_scout_db;
+ALTER DEFAULT PRIVILEGES FOR ROLE crypto_scout_db IN SCHEMA crypto_scout GRANT USAGE, SELECT ON SEQUENCES TO crypto_scout_db;
  
 -- Add compression after the table is created and permissions are granted
 ALTER TABLE crypto_scout.cmc_fgi SET (
