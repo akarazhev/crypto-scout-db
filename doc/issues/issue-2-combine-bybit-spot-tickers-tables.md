@@ -8,6 +8,7 @@ In this `crypto-scout-db` project we are going to combine two tables `bybit_spot
 Take the following roles:
 
 - Expert database engineer.
+- Expert technical writer.
 
 ## Conditions
 
@@ -49,20 +50,20 @@ Take the following roles:
 
 ### Field mapping from sample JSON
 
-- `topic`: string, "Topic name"
-- `ts`: number, "The timestamp (ms) that the system generates the data"
-- `type`: string, Data type. `snapshot`
-- `cs`: integer, Cross sequence
-- `data`: array, Object
-- `symbol`: string, Symbol name
-- `lastPrice`: string, Last price
-- `highPrice24h`: string, The highest price in the last 24 hours
-- `lowPrice24h`: string, The lowest price in the last 24 hours
-- `prevPrice24h`: string, Percentage change of market price relative to 24h
-- `volume24h`: string, Volume for 24h
-- `turnover24h`: string, Turnover for 24h
-- `price24hPcnt`: string, Percentage change of market price relative to 24h
-- `usdIndexPrice`: string, USD index price: - used to calculate USD value of the assets in Unified account. - non-collateral margin coin returns
+- `topic`: string, Topic name
+- `ts`: number. The timestamp (ms) that the system generates the data
+- `type`: string. Data type. `snapshot`
+- `cs`: integer. Cross sequence
+- `data`: array. Object
+- `symbol`: string. Symbol name
+- `lastPrice`: string. Last price
+- `highPrice24h`: string. The highest price in the last 24 hours
+- `lowPrice24h`: string. The lowest price in the last 24 hours
+- `prevPrice24h`: string. Percentage change of market price relative to 24h
+- `volume24h`: string. Volume for 24h
+- `turnover24h`: string. Turnover for 24h
+- `price24hPcnt`: string. Percentage change of market price relative to 24h
+- `usdIndexPrice`: string. USD index price: - used to calculate USD value of the assets in Unified account. - non-collateral margin coin returns
 
 ## Resolution
 
