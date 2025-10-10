@@ -63,6 +63,34 @@ CREATE INDEX IF NOT EXISTS idx_bybit_spot_tickers_symbol_timestamp ON crypto_sco
 -- Using 1-day chunks for optimal performance with time-series data
 SELECT public.create_hypertable('crypto_scout.bybit_spot_tickers', 'timestamp', chunk_time_interval => INTERVAL '1 day', if_not_exists => TRUE);
 
+-- Create Bybit Spot Public Trade table in crypto_scout schema
+CREATE TABLE IF NOT EXISTS crypto_scout.bybit_spot_public_trade (
+    id BIGSERIAL,
+    timestamp TIMESTAMP WITH TIME ZONE NOT NULL,
+    trade_time TIMESTAMP WITH TIME ZONE NOT NULL,
+    symbol TEXT NOT NULL,
+    taker_side TEXT NOT NULL,
+    size NUMERIC(20, 8) NOT NULL,
+    price NUMERIC(20, 8) NOT NULL,
+    trade_id TEXT NOT NULL,
+    block_trade BOOLEAN NOT NULL,
+    rpi BOOLEAN,
+    cross_sequence BIGINT NOT NULL,
+    -- For hypertables, primary key must include the partitioning column (trade_time)
+    CONSTRAINT bybit_spot_public_trade_pkey PRIMARY KEY (id, trade_time)
+ );
+
+-- Set ownership to application role
+ALTER TABLE crypto_scout.bybit_spot_public_trade OWNER TO crypto_scout_db;
+ 
+ -- Create indexes for bybit_spot_public_trade table (before hypertable conversion)
+CREATE INDEX IF NOT EXISTS idx_bybit_spot_public_trade_trade_time ON crypto_scout.bybit_spot_public_trade(trade_time DESC);
+CREATE INDEX IF NOT EXISTS idx_bybit_spot_public_trade_symbol_trade_time ON crypto_scout.bybit_spot_public_trade(symbol, trade_time DESC);
+
+-- Convert the bybit_spot_public_trade table to a hypertable partitioned by trade_time
+-- Using 1-day chunks for optimal performance with time-series data
+SELECT public.create_hypertable('crypto_scout.bybit_spot_public_trade', 'trade_time', chunk_time_interval => INTERVAL '1 day', if_not_exists => TRUE);
+  
 -- Create Bybit Launch Pool table in crypto_scout schema
 CREATE TABLE IF NOT EXISTS crypto_scout.bybit_lpl (
     id BIGSERIAL,
@@ -82,7 +110,7 @@ CREATE TABLE IF NOT EXISTS crypto_scout.bybit_lpl (
 -- Set ownership to application role
 ALTER TABLE crypto_scout.bybit_lpl OWNER TO crypto_scout_db;
  
--- Create indexes for bybit_lpl table first (before hypertable conversion)
+-- Create index for bybit_lpl table first (before hypertable conversion)
 CREATE INDEX IF NOT EXISTS idx_bybit_lpl_stake_begin_time ON crypto_scout.bybit_lpl(stake_begin_time DESC);
  
 -- Convert the bybit_lpl table to a hypertable partitioned by stake_begin_time
@@ -109,21 +137,31 @@ ALTER TABLE crypto_scout.cmc_fgi SET (
     timescaledb.compress_segmentby = 'name',
     timescaledb.compress_orderby = 'timestamp DESC, id DESC'
 );
+ 
+-- Add compression for bybit_spot_public_trade table
+ALTER TABLE crypto_scout.bybit_spot_public_trade SET (
+    timescaledb.compress,
+    timescaledb.compress_segmentby = 'symbol',
+    timescaledb.compress_orderby = 'trade_time DESC, id DESC'
+);
 
 -- Compress chunks that are older than 7 days
 SELECT add_compression_policy('crypto_scout.bybit_spot_tickers', INTERVAL '7 days');
 SELECT add_compression_policy('crypto_scout.bybit_lpl', INTERVAL '7 days');
 SELECT add_compression_policy('crypto_scout.cmc_fgi', INTERVAL '7 days');
+SELECT add_compression_policy('crypto_scout.bybit_spot_public_trade', INTERVAL '7 days');
 
 -- Reorder open chunks by timestamp to optimize range scans on hot data
 SELECT add_reorder_policy('crypto_scout.bybit_spot_tickers', 'idx_bybit_spot_tickers_timestamp');
 SELECT add_reorder_policy('crypto_scout.cmc_fgi', 'idx_cmc_fgi_timestamp');
 SELECT add_reorder_policy('crypto_scout.bybit_lpl', 'idx_bybit_lpl_stake_begin_time');
+SELECT add_reorder_policy('crypto_scout.bybit_spot_public_trade', 'idx_bybit_spot_public_trade_trade_time');
 
 -- Retention policies
 SELECT add_retention_policy('crypto_scout.cmc_fgi', INTERVAL '730 days'); -- keep ~2 years
 SELECT add_retention_policy('crypto_scout.bybit_spot_tickers', INTERVAL '180 days'); -- keep 6 months
 SELECT add_retention_policy('crypto_scout.bybit_lpl', INTERVAL '730 days'); -- keep ~2 years
+SELECT add_retention_policy('crypto_scout.bybit_spot_public_trade', INTERVAL '90 days'); -- high-volume trades, keep 3 months
 
 -- Grant privileges
 GRANT ALL PRIVILEGES ON SCHEMA crypto_scout TO crypto_scout_db;

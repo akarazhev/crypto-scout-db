@@ -51,9 +51,6 @@ Take the following roles:
 NOTE: For Futures and Spot, a single message may have up to 1024 trades. As such, multiple messages may be sent for the
 same `seq`.
 
-### Field mapping from sample JSON
-
-- `id`: string. Message id. Unique field for option
 - `topic`: string. Topic name
 - `type`: string. Data type. snapshot
 - `ts`: number. The timestamp (ms) that the system generates the data
@@ -63,12 +60,69 @@ same `seq`.
 - `S`: string. Side of taker. **Buy**,**Sell**
 - `v`: string. Trade size
 - `p`: string. Trade price
-- `L`: string. Direction of price change. Unique field for Perps & futures
 - `i`: string. Trade ID
 - `BT`: boolean. Whether it is a block trade order or not
 - `RPI`: boolean. Whether it is a RPI trade or not
-- `seq`: integer. cross sequence
 - `mP`: string. Mark price, unique field for **option**
 - `iP`: string. Index price, unique field for **option**
 - `mIv`: string. Mark iv, unique field for **option**
 - `iv`: string. iv, unique field for **option**
+
+## Resolution
+
+- **[change]** Added hypertable `crypto_scout.bybit_spot_public_trade` in `script/init.sql` with schema, indexes,
+  compression, reorder, and retention.
+
+### Table schema: `crypto_scout.bybit_spot_public_trade`
+
+- **Columns**
+    - `id BIGSERIAL`
+    - `timestamp TIMESTAMPTZ NOT NULL`
+    - `trade_time TIMESTAMPTZ NOT NULL`
+    - `symbol TEXT NOT NULL`
+    - `taker_side TEXT NOT NULL`
+    - `size NUMERIC(20, 8) NOT NULL`
+    - `price NUMERIC(20, 8) NOT NULL`
+    - `trade_id TEXT NOT NULL`
+    - `block_trade BOOLEAN NOT NULL`
+    - `rpi BOOLEAN`
+    - `cross_sequence BIGINT NOT NULL`
+- **Primary key**: `(id, trade_time)`
+- **Hypertable**: partitioned by `trade_time` (1-day chunks)
+
+### Indexes
+
+- `idx_bybit_spot_public_trade_trade_time` on `(trade_time DESC)`
+- `idx_bybit_spot_public_trade_symbol_trade_time` on `(symbol, trade_time DESC)`
+- Reorder: `add_reorder_policy('crypto_scout.bybit_spot_public_trade', 'idx_bybit_spot_public_trade_trade_time')`
+
+### Compression
+
+- `ALTER TABLE crypto_scout.bybit_spot_public_trade SET (
+  timescaledb.compress,
+  timescaledb.compress_segmentby = 'symbol',
+  timescaledb.compress_orderby = 'trade_time DESC, id DESC'
+);`
+- Policy: `add_compression_policy('crypto_scout.bybit_spot_public_trade', INTERVAL '7 days')`
+
+### Retention
+
+- Policy: `add_retention_policy('crypto_scout.bybit_spot_public_trade', INTERVAL '90 days')`
+
+### Field mapping from sample JSON to schema
+
+- `ts` (ms) → `timestamp` (epoch millis → timestamptz)
+- `data[].T` (ms) → `trade_time` (epoch millis → timestamptz)
+- `data[].s` → `symbol`
+- `data[].S` → `taker_side`
+- `data[].v` → `size`
+- `data[].p` → `price`
+- `data[].i` → `trade_id`
+- `data[].BT` → `block_trade`
+- `data[].RPI` → `rpi`
+- `data[].seq` → `cross_sequence`
+
+Notes:
+
+- Options-only fields `mP`, `iP`, `mIv`, `iv` are intentionally omitted for spot storage.
+- A single message may batch up to 1024 trades; order by `trade_time` and `trade_id` for deterministic processing.

@@ -29,7 +29,8 @@ time-series data from Bybit and CoinMarketCap.
     - Ensures extensions exist: `timescaledb` and `pg_stat_statements`.
     - Persists `search_path` defaults via `ALTER DATABASE` and `ALTER ROLE ... IN DATABASE ...`.
     - Sets ownership of tables to `crypto_scout_db` and default privileges for future objects.
-    - Adds a selectivity index `idx_bybit_spot_tickers_symbol_timestamp` on `(symbol, timestamp DESC)` for per-symbol queries.
+    - Adds a selectivity index `idx_bybit_spot_tickers_symbol_timestamp` on `(symbol, timestamp DESC)` for per-symbol
+      queries.
 
 ---
 
@@ -140,18 +141,22 @@ POSTGRES_EXTRA_OPTS=--schema=crypto_scout --blobs
 - `crypto_scout.cmc_fgi (timestamp)` → 1-day chunks
 - `crypto_scout.bybit_spot_tickers (timestamp)` → 1-day chunks
 - `crypto_scout.bybit_lpl (stake_begin_time)` → 1-day chunks
+- `crypto_scout.bybit_spot_public_trade (trade_time)` → 1-day chunks
 - Hypertable creation is idempotent (`if_not_exists => TRUE`).
 
 ### Indexes
 
 - Time indexes for ranges:
-    - `idx_cmc_fgi_timestamp`, `idx_bybit_spot_tickers_timestamp`, `idx_bybit_lpl_stake_begin_time`
+    - `idx_cmc_fgi_timestamp`, `idx_bybit_spot_tickers_timestamp`, `idx_bybit_lpl_stake_begin_time`,
+      `idx_bybit_spot_public_trade_trade_time`
 - Selectivity helper: `idx_bybit_spot_tickers_symbol_timestamp` on `(symbol, timestamp DESC)`.
+- Trade selectivity: `idx_bybit_spot_public_trade_symbol_trade_time` on `(symbol, trade_time DESC)`.
 
 ### Compression
 
 - Enabled on all hypertables with time-order:
     - `bybit_spot_tickers`: `compress_segmentby = 'symbol'`, `compress_orderby = 'timestamp DESC, id DESC'`
+    - `bybit_spot_public_trade`: `compress_segmentby = 'symbol'`, `compress_orderby = 'trade_time DESC, id DESC'`
     - `bybit_lpl`: `compress_segmentby = 'return_coin'`, `compress_orderby = 'stake_begin_time DESC, id DESC'`
     - `cmc_fgi`: `compress_segmentby = 'name'`, `compress_orderby = 'timestamp DESC, id DESC'`
 - **Compression policy**: compress chunks older than 7 days for all hypertables.
@@ -181,16 +186,25 @@ ALTER TABLE crypto_scout.cmc_fgi SET (
   timescaledb.compress_segmentby = 'name',
   timescaledb.compress_orderby = 'timestamp DESC, id DESC'
 );
+
+-- Bybit Spot Public Trade
+ALTER TABLE crypto_scout.bybit_spot_public_trade SET (
+  timescaledb.compress,
+  timescaledb.compress_segmentby = 'symbol',
+  timescaledb.compress_orderby = 'trade_time DESC, id DESC'
+);
 ```
 
 ### Reorder policies
 
 - Reorder open chunks by their time index for better locality:
-    - Bybit Spot Tickers and FGI by timestamp index; LPL by `stake_begin_time` index.
+    - Bybit Spot Tickers and FGI by timestamp index; LPL by `stake_begin_time` index; Spot Public Trade by
+      `trade_time` index.
 
 ### Retention policies
 
 - High-volume ticker data (Bybit): keep 180 days.
+- High-volume spot public trades: keep 90 days.
 - Lower-volume reference (FGI, LPL): keep ~730 days.
 
 ### Permissions
