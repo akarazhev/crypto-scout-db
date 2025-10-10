@@ -7,6 +7,7 @@ In this `crypto-scout-db` project we are going to define a new `bybit_spot_publi
 Take the following roles:
 
 - Expert database engineer.
+- Expert technical writer.
 
 ## Conditions
 
@@ -15,13 +16,13 @@ Take the following roles:
 
 ## Tasks
 
-- As the expert database engineer review the current `init.sql` script implementation in `crypto-scout-db` project and
+- As the expert database engineer review the current `init.sql` script implementation in `crypto-scout-db` project and 
   update it by defining the `bybit_spot_public_trade` table.
-- Define for the `bybit_spot_public_trade` table indexes, retentions and compressions.
-- Recheck your proposal and make sure that they are correct and haven't missed any important points.
-- Rely on the sample of the data section.
-- Update the `README.md` and `timescaledb-production-setup.md` files with your results.
-- Update the `issue-3-define-bybit-spot-public-trade-table.md` file with your resolution.
+- As the expert database engineer define for the `bybit_spot_public_trade` table indexes, retentions and compressions.
+- As the expert database engineer recheck your proposal and make sure that they are correct and haven't missed any important points.
+- As the expert database engineer Rely on the sample of the data section.
+- As the technical writer update the `README.md` and `timescaledb-production-setup.md` files with your results.
+- As the technical writer update the `issue-3-define-bybit-spot-public-trade-table.md` file with your resolution.
 
 ## Sample of the data
 
