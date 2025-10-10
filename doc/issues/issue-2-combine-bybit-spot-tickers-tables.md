@@ -62,7 +62,8 @@ Take the following roles:
 - `volume24h`: string. Volume for 24h
 - `turnover24h`: string. Turnover for 24h
 - `price24hPcnt`: string. Percentage change of market price relative to 24h
-- `usdIndexPrice`: string. USD index price: - used to calculate USD value of the assets in Unified account. - non-collateral margin coin returns
+- `usdIndexPrice`: string. USD index price: - used to calculate USD value of the assets in Unified account. -
+  non-collateral margin coin returns
 
 ## Resolution
 
