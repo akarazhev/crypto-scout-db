@@ -31,19 +31,18 @@ Take the following roles:
 
 ```json
 {
-  "ts": 1673853746003,
-  "type": "snapshot",
-  "cs": 2588407389,
+  "ts": 1760107467340,
+  "cs": 87394187580,
   "data": {
     "symbol": "BTCUSDT",
-    "lastPrice": "21109.77",
-    "highPrice24h": "21426.99",
-    "lowPrice24h": "20575",
-    "prevPrice24h": "20704.93",
-    "volume24h": "6780.866843",
-    "turnover24h": "141946527.22907118",
-    "price24hPcnt": "0.0196",
-    "usdIndexPrice": "21120.2400136"
+    "lastPrice": "121349.1",
+    "highPrice24h": "122537.6",
+    "lowPrice24h": "119641.7",
+    "prevPrice24h": "121414.7",
+    "volume24h": "8892.609065",
+    "turnover24h": "1077902055.75212816",
+    "price24hPcnt": "-0.0005",
+    "usdIndexPrice": "121401.852838"
   }
 }
 ```
@@ -51,7 +50,6 @@ Take the following roles:
 ### Field mapping from sample JSON
 
 - `ts`: number. The timestamp (ms) that the system generates the data
-- `type`: string. Data type. `snapshot`
 - `cs`: integer. Cross sequence
 - `data`: array. Object:
 - `symbol`: string. Symbol name
