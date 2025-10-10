@@ -30,14 +30,35 @@ Take the following roles:
 
 ```json
 {
-  "ts": 1760106548365,
+  "ts": 1760108679985,
   "data": [
     {
-      "T": 1760106548303,
-      "s": "ETHUSDT",
+      "T": 1760108679532,
+      "s": "BTCUSDT",
       "S": "Buy",
-      "v": "0.31",
-      "p": "4299.77"
+      "v": "0.032",
+      "p": "119261.10"
+    },
+    {
+      "T": 1760108679542,
+      "s": "BTCUSDT",
+      "S": "Buy",
+      "v": "0.014",
+      "p": "119253.30"
+    },
+    {
+      "T": 1760108679584,
+      "s": "BTCUSDT",
+      "S": "Buy",
+      "v": "0.002",
+      "p": "119261.50"
+    },
+    {
+      "T": 1760108679863,
+      "s": "BTCUSDT",
+      "S": "Buy",
+      "v": "0.123",
+      "p": "119252.90"
     }
   ]
 }
@@ -49,6 +70,7 @@ Take the following roles:
 - `data`: Object.
 - `T`: number. The updated timestamp (ms)
 - `s`: string. Symbol name
-- `S`: string. Position side. Buy,Sell. When you receive a Buy update, this means that a long position has been liquidated
+- `S`: string. Position side. Buy,Sell. When you receive a Buy update, this means that a long position has been
+  liquidated
 - `v`: string. Executed size
 - `p`: string. Bankruptcy price
