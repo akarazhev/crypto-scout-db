@@ -29,20 +29,194 @@ Take the following roles:
 
 ```json
 {
-  "topic": "publicTrade.BTCUSDT",
-  "type": "snapshot",
-  "ts": 1672304486868,
+  "ts": 1760117214053,
   "data": [
     {
-      "T": 1672304486865,
+      "i": "2290000000908760214",
+      "T": 1760117214051,
+      "p": "118067.5",
+      "v": "0.000061",
+      "S": "Sell",
+      "seq": 87416325577,
       "s": "BTCUSDT",
-      "S": "Buy",
-      "v": "0.001",
-      "p": "16578.50",
-      "L": "PlusTick",
-      "i": "20f43950-d8dd-5b31-9112-a178eb6023af",
       "BT": false,
-      "seq": 1783284617
+      "RPI": false
+    },
+    {
+      "i": "2290000000908760215",
+      "T": 1760117214051,
+      "p": "118067.5",
+      "v": "0.084697",
+      "S": "Sell",
+      "seq": 87416325577,
+      "s": "BTCUSDT",
+      "BT": false,
+      "RPI": false
+    },
+    {
+      "i": "2290000000908760216",
+      "T": 1760117214051,
+      "p": "118067.5",
+      "v": "0.1069",
+      "S": "Sell",
+      "seq": 87416325577,
+      "s": "BTCUSDT",
+      "BT": false,
+      "RPI": false
+    },
+    {
+      "i": "2290000000908760217",
+      "T": 1760117214051,
+      "p": "118067.5",
+      "v": "0.050819",
+      "S": "Sell",
+      "seq": 87416325577,
+      "s": "BTCUSDT",
+      "BT": false,
+      "RPI": false
+    },
+    {
+      "i": "2290000000908760218",
+      "T": 1760117214051,
+      "p": "118067.5",
+      "v": "0.105026",
+      "S": "Sell",
+      "seq": 87416325577,
+      "s": "BTCUSDT",
+      "BT": false,
+      "RPI": false
+    },
+    {
+      "i": "2290000000908760219",
+      "T": 1760117214051,
+      "p": "118067.5",
+      "v": "0.07472",
+      "S": "Sell",
+      "seq": 87416325577,
+      "s": "BTCUSDT",
+      "BT": false,
+      "RPI": false
+    },
+    {
+      "i": "2290000000908760220",
+      "T": 1760117214051,
+      "p": "118067.5",
+      "v": "0.029913",
+      "S": "Sell",
+      "seq": 87416325577,
+      "s": "BTCUSDT",
+      "BT": false,
+      "RPI": false
+    },
+    {
+      "i": "2290000000908760221",
+      "T": 1760117214051,
+      "p": "118067.5",
+      "v": "0.03167",
+      "S": "Sell",
+      "seq": 87416325577,
+      "s": "BTCUSDT",
+      "BT": false,
+      "RPI": false
+    },
+    {
+      "i": "2290000000908760222",
+      "T": 1760117214051,
+      "p": "118067.5",
+      "v": "0.0256",
+      "S": "Sell",
+      "seq": 87416325577,
+      "s": "BTCUSDT",
+      "BT": false,
+      "RPI": false
+    },
+    {
+      "i": "2290000000908760223",
+      "T": 1760117214051,
+      "p": "118067.5",
+      "v": "0.001",
+      "S": "Sell",
+      "seq": 87416325577,
+      "s": "BTCUSDT",
+      "BT": false,
+      "RPI": false
+    },
+    {
+      "i": "2290000000908760224",
+      "T": 1760117214051,
+      "p": "118067.5",
+      "v": "0.000212",
+      "S": "Sell",
+      "seq": 87416325577,
+      "s": "BTCUSDT",
+      "BT": false,
+      "RPI": false
+    },
+    {
+      "i": "2290000000908760225",
+      "T": 1760117214051,
+      "p": "118067.5",
+      "v": "0.000212",
+      "S": "Sell",
+      "seq": 87416325577,
+      "s": "BTCUSDT",
+      "BT": false,
+      "RPI": false
+    },
+    {
+      "i": "2290000000908760226",
+      "T": 1760117214051,
+      "p": "118067.5",
+      "v": "0.001",
+      "S": "Sell",
+      "seq": 87416325577,
+      "s": "BTCUSDT",
+      "BT": false,
+      "RPI": false
+    },
+    {
+      "i": "2290000000908760227",
+      "T": 1760117214051,
+      "p": "118066.4",
+      "v": "0.01",
+      "S": "Sell",
+      "seq": 87416325577,
+      "s": "BTCUSDT",
+      "BT": false,
+      "RPI": false
+    },
+    {
+      "i": "2290000000908760228",
+      "T": 1760117214051,
+      "p": "118066",
+      "v": "0.016938",
+      "S": "Sell",
+      "seq": 87416325577,
+      "s": "BTCUSDT",
+      "BT": false,
+      "RPI": false
+    },
+    {
+      "i": "2290000000908760229",
+      "T": 1760117214051,
+      "p": "118065.9",
+      "v": "0.004233",
+      "S": "Sell",
+      "seq": 87416325577,
+      "s": "BTCUSDT",
+      "BT": false,
+      "RPI": false
+    },
+    {
+      "i": "2290000000908760230",
+      "T": 1760117214051,
+      "p": "118065.5",
+      "v": "0.042544",
+      "S": "Sell",
+      "seq": 87416325577,
+      "s": "BTCUSDT",
+      "BT": false,
+      "RPI": false
     }
   ]
 }
@@ -51,22 +225,17 @@ Take the following roles:
 NOTE: For Futures and Spot, a single message may have up to 1024 trades. As such, multiple messages may be sent for the
 same `seq`.
 
-- `topic`: string. Topic name
-- `type`: string. Data type. snapshot
 - `ts`: number. The timestamp (ms) that the system generates the data
-- `data`: array. Object. Sorted by the time the trade was matched in ascending order
-- `T`: number. The timestamp (ms) that the order is filled
-- `s`: string. Symbol name
-- `S`: string. Side of taker. **Buy**,**Sell**
-- `v`: string. Trade size
-- `p`: string. Trade price
+- `data`: array. Object. Sorted by the time the trade was matched in ascending order:
 - `i`: string. Trade ID
+- `T`: number. The timestamp (ms) that the order is filled
+- `p`: string. Trade price
+- `v`: string. Trade size
+- `S`: string. Side of taker. **Buy**,**Sell**
+- `seq`: integer. cross sequence
+- `s`: string. Symbol name
 - `BT`: boolean. Whether it is a block trade order or not
 - `RPI`: boolean. Whether it is a RPI trade or not
-- `mP`: string. Mark price, unique field for **option**
-- `iP`: string. Index price, unique field for **option**
-- `mIv`: string. Mark iv, unique field for **option**
-- `iv`: string. iv, unique field for **option**
 
 ## Resolution
 
