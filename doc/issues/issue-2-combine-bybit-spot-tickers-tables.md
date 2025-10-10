@@ -50,11 +50,10 @@ Take the following roles:
 
 ### Field mapping from sample JSON
 
-- `topic`: string, Topic name
 - `ts`: number. The timestamp (ms) that the system generates the data
 - `type`: string. Data type. `snapshot`
 - `cs`: integer. Cross sequence
-- `data`: array. Object
+- `data`: array. Object:
 - `symbol`: string. Symbol name
 - `lastPrice`: string. Last price
 - `highPrice24h`: string. The highest price in the last 24 hours
